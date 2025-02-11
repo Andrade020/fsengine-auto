@@ -1,51 +1,52 @@
-import os
-import glob
-import json
-import pandas as pd
+import os                                                   # Custos tabulariorum
+import glob                                                 # Venator formarum
+import json                                                 # Narrator historiarum
+import pandas as pd                                         # Alchimista datorum
 
-from estoques.processador_pastas import ProcessadorPastas
-from estoques.importador_dados import ImportadorDados
-from estoques.processar_dados import ProcessarDados
-from estoques.processar_metricas import ProcessarMetricas
+from estoques.processador_pastas import ProcessadorPastas   # Architectus viarum
+from estoques.importador_dados import ImportadorDados       # Navigator maris digitalis
+from estoques.processar_dados import ProcessarDados         # Artifex sapiens
+from estoques.processar_metricas import ProcessarMetricas   # Magister precisionis
+
 
 def main():
-    # Configurações iniciais
-    pd.options.display.max_columns = 100
-    # Instancia o ProcessadorPastas para identificar as pastas válidas na pasta "data"
+    # Config inic ###$$##$$##$$##$$##$$##$$##$$##$$##$$##$$##$$$###$$$##$#$#$$$#$##$#$
+    pd.options.display.max_columns = 100 ##$#$#$#$#$#$$#$$#$$##$#$$#$$#$#$#$#$#$$#$#$#
+    # Instancia o ProcessadorPastas para identific pastas válidas na pasta "data"
     obj_pastas = ProcessadorPastas(ignore_list=[], ultima=True)
-    data_path = obj_pastas.file_path
+    data_path = obj_pastas.file_path ###$$##$$##$$##$$####$$##$$##$$##$$#
     valid_folders = obj_pastas.valid_folders  # pastas válidas já filtradas e ordenadas
-
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
     if not valid_folders:
         print("Nenhuma pasta válida encontrada em 'data'.")
         return
-
-    # Cria o diretório para salvar os resultados, se não existir
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
+    # Cria a pasta p salvar os resuls, se n existir
     results_dir = os.path.join(os.getcwd(), "results")
     os.makedirs(results_dir, exist_ok=True)
-
-    # Arquivo de controle com as pastas já processadas
+###$$##$$##$$##$$####$$##$$##$$##$$#
+    # Arquivo cas pastas jah processadas
     processed_file = os.path.join(results_dir, "processed_folders.json")
     if os.path.exists(processed_file):
         with open(processed_file, "r", encoding="utf-8") as pf:
             processed_folders = json.load(pf)
     else:
         processed_folders = []
-
-    # Itera sobre cada pasta válida que ainda não foi processada
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
+    # laço p/ cada pasta válida que ainda n foi processada
     for folder in valid_folders:
         if folder in processed_folders:
             print(f"Pasta {folder} já foi processada. Ignorando.")
             continue
-
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
         print(f"\nProcessando pasta: {folder}")
         folder_path = os.path.join(data_path, folder)
         list_files = glob.glob(os.path.join(folder_path, '*'))
         if not list_files:
             print(f"Pasta {folder} sem arquivos. Ignorando.")
             continue
-
-        # Importa parâmetros (feriados, data de referência, etc.) e os dados
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
+        # Importa parâms (feriados, data de referência, etc.) e os dados
         obj_importador = ImportadorDados()
         list_holidays = obj_importador.holidays
         ref_date = obj_importador.ref_date
@@ -53,11 +54,11 @@ def main():
         if df_final.empty:
             print(f"Dados vazios na pasta {folder}. Ignorando.")
             continue
-
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
         # --- Processamento dos dados usando ProcessarDados ---
         obj_proc_dados = ProcessarDados(df_final)
         taxa_media_dados = obj_proc_dados.taxa_media()                   # escalar
-        # Calcula fluxo de pagamento para os três horizontes
+        # Calc fluxo de pagamnto para os 3 horizos
         fluxo_pagamento_d = obj_proc_dados.fluxo_pagamento('dia')           # diário
         fluxo_pagamento_s = obj_proc_dados.fluxo_pagamento('semana')          # semanal
         fluxo_pagamento_m = obj_proc_dados.fluxo_pagamento('mês')             # mensal
@@ -73,8 +74,8 @@ def main():
             'Valor Atual', 'Documento do Sacado', [10, 20, 50, 100, 200, 500, 1000]
         )  # dicionário
         pagamentos_por_ano = obj_proc_dados.pagamentos_por_ano()          # série
-
-        # --- Processamento das métricas usando ProcessarMetricas ---
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
+        # --- méhtricas usando ProcessarMetricas ---
         obj_proc_metricas = ProcessarMetricas(df_final, ref_date, list_holidays)
         metricas = obj_proc_metricas.calcular_metricas()                  # dicionário (com séries)
         estatisticas = obj_proc_metricas.calcular_estatisticas()             # dicionário (com valores e séries)
@@ -83,11 +84,11 @@ def main():
         indice_inadimplencia = obj_proc_metricas.indice_inadimplencia()        # escalar
         taxa_media_metricas = obj_proc_metricas.taxa_media()                 # escalar
         volume_por_capag = obj_proc_metricas.volume_por_categoria('CAPAG Ente')# série
-
-        # --- Conversão de Series para dicionários ---
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
+        # --- Convrsão de Series para dics ---
         def series_to_dict(x):
             return x.to_dict() if hasattr(x, "to_dict") else x
-
+###$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$####$$##$$##$$##$$#
         metricas = {k: series_to_dict(v) for k, v in metricas.items()}
         estatisticas = {k: series_to_dict(v) for k, v in estatisticas.items()}
         if concentracao:
@@ -105,11 +106,11 @@ def main():
         if cumulativo_vencimentos is not None:
             cumulativo_vencimentos = series_to_dict(cumulativo_vencimentos)
 
-        # --- Monta o dicionário final de resultados ---
+        # --- Monta o dic final de results ---
         results = {
             "folder": folder,
             "list_files": list_files,
-            # Resultados de ProcessarDados
+            # Resltados de ProcessarDados
             "taxa_media_dados": taxa_media_dados,
             "fluxo_pagamento_diario": fluxo_pagamento_d,
             "fluxo_pagamento_semanal": fluxo_pagamento_s,
@@ -120,7 +121,7 @@ def main():
             "cumulativo_vencimentos": cumulativo_vencimentos,
             "concentracao_sacado_dados": concentracao_sacado_dados,
             "pagamentos_por_ano": pagamentos_por_ano,
-            # Resultados de ProcessarMetricas
+            # Resltados de ProcessarMetricas
             "metricas": metricas,
             "estatisticas": estatisticas,
             "concentracao": concentracao,
@@ -130,13 +131,13 @@ def main():
             "volume_por_capag": volume_por_capag
         }
 
-        # --- Salva os resultados em um arquivo JSON ---
+        # --- Salva os resultados no JSON ---
         output_file = os.path.join(results_dir, f"results_{folder}.json")
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(results, f, ensure_ascii=False, indent=4, default=str)
         print(f"Resultados salvos para a pasta {folder} em: {output_file}")
 
-        # Adiciona a pasta processada à lista e atualiza o arquivo de controle
+        # Adiciona a pasta proc a lista de pastas ja processdas 
         processed_folders.append(folder)
         with open(processed_file, "w", encoding="utf-8") as pf:
             json.dump(processed_folders, pf, ensure_ascii=False, indent=4)
