@@ -5,4 +5,4 @@ from .processar_dados import ProcessarDados
 from .processar_metricas import ProcessarMetricas
 from .importador_dados import ImportadorDados
 
-__all__ = ['ProcessadorPastas', 'ImportadorDados' 'ProcessarDados', 'ProcessarMetricas']
+__all__ = ['ProcessadorPastas', 'ImportadorDados', 'ProcessarDados', 'ProcessarMetricas']
